@@ -1,8 +1,15 @@
 # Attributions
 
-This showcase describes an application that relies on the following open-source
-components (listed at a high level). Their licenses apply to the respective
-libraries; they are not included in this repository.
+## Standards
+
+- **IEC TR 60890** — thermal-verification-by-calculation method for low-voltage switchgear and controlgear assemblies; © International Electrotechnical Commission. Referenced for context; the standard text is not reproduced in this repository.
+- **IEC 61439-1** — low-voltage switchgear and controlgear assemblies (general rules); © International Electrotechnical Commission. Referenced for context; not reproduced.
+
+## Reference products
+
+- **Trinity Touch** — publicly documented solar combiner / array junction box (AJB) products, used as an illustrative reference for the electrical-enclosure scenario. No proprietary drawings or CAD data are included in this showcase.
+
+## Open-source components (used by the application; not included in this repository)
 
 | Component | Purpose | License |
 |---|---|---|

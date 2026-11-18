@@ -1,170 +1,238 @@
-# Agentic CAD-to-Engineering Analysis
+# Agentic CAD-to-Engineering Analysis — Turn 3D CAD Assemblies & GA Drawings into Verified Engineering Deliverables
 
-**Turn 3D CAD assemblies and engineering drawings into verified engineering deliverables — by describing what you need in plain language.**
+**Evidence-led interpretation of a real 3D CAD assembly and its general-arrangement drawing — component extraction, BOM reconciliation, power-loss calculation, interactive 3D inspection, and a professional engineering report, executed by natural-language instruction.**
 
-A professional portfolio showcase of an application built with NebulaCloud Studio.
-
-> **Notice**
-> This repository is a public project showcase created using NebulaCloud Studio.
-> The proprietary source code, implementation details, prompts, workflows, datasets, infrastructure, and deployment configuration are intentionally not included.
+> **Notice** — This repository is a public project showcase created using NebulaCloud Studio. The proprietary source code, implementation details, prompts, workflows, datasets, infrastructure, and deployment configuration are intentionally not included.
 
 ---
 
-## 1. Overview
+## Overview
 
-This application demonstrates an end-to-end, agentic engineering workflow. It ingests a real 3D CAD assembly (STEP) together with a general-arrangement (GA) drawing, interprets both, and produces engineering analysis that is traceable to source data.
+Electrical enclosure and switchgear manufacturers already own 3D CAD models (SOLIDWORKS, Creo, AutoCAD) and detailed GA drawings. The engineering questions they need answered every day — *what components are actually in this model? does the BOM match the drawing? what is the total heat load?* — are still answered by hand.
 
-An engineer can open the application, issue a natural-language instruction such as *"reconcile the bill of materials, calculate the declared power losses, and generate a report"* — and the application executes the required CAD, document, calculation, visualization, and reporting steps, then returns source-linked deliverables.
+This showcase demonstrates a single connected workflow that:
 
-## 2. Business Problem
+1. Reads a STEP (AP203) assembly and extracts its hierarchy, components, dimensions and placements.
+2. Reads the GA drawing and extracts the bill of materials, quantities, ratings and losses.
+3. Reconciles the two — every drawing line is matched to identified geometry as **confirmed**, **inferred**, or **review**.
+4. Reproduces the declared heat-loss subtotal and operating-current reference with source traceability.
+5. Presents the assembly in an interactive 3D view (inspect, isolate, select; heat-source and thermal views).
+6. Lets an engineer describe the task in plain language and executes the required tools.
+7. Emits a professional engineering assessment and structured, reproducible deliverables.
 
-Manufacturers of electrical switchgear and enclosures rely on existing 3D CAD models (SOLIDWORKS, Creo, AutoCAD) and technical drawings. To answer a routine engineering question — *"what is the total heat load of this enclosure?"* or *"does this BOM match the 3D model?"* — engineers today must manually:
+The focus is on **what the application produces** — a traceable engineering result — not on how it is implemented.
 
-- Re-interpret the assembly structure and components.
-- Read tables out of drawings by hand.
-- Cross-check the drawing against the 3D model.
-- Repeat calculations in spreadsheets or separate tools.
+---
 
-This is slow, error-prone, and disconnected from the models the organization already owns.
+## Business Problem
 
-## 3. Solution Overview
+Engineering teams face a fragmented, manual workflow:
 
-The application connects the CAD model, the engineering drawing, the calculations, and the deliverables into one guided workflow:
+- **CAD and documents are disconnected.** The 3D model and the GA drawing live in different tools; reconciling them is a tedious visual cross-check.
+- **Extraction is error-prone.** Component descriptions, quantities and losses are read out of drawings by hand.
+- **Calculations are not traceable.** A heat-loss figure that mixes datasheet values and assumptions looks confident but is not defensible.
+- **Review loops are slow.** Discrepancies (an extra component, a mismatched quantity) surface late and require rework.
 
-1. **Direct CAD understanding** — import the STEP assembly, extract its hierarchy, components, dimensions, and placements.
-2. **Drawing intelligence** — extract the GA bill of materials, quantities, ratings, and losses.
-3. **CAD-to-GA reconciliation** — match expected components to identified geometry, with explicit *confirmed / inferred / review* states.
-4. **Engineering calculations** — deterministic, unit-validated calculations with source traceability and safeguards.
-5. **Interactive 3D inspection** — inspect, isolate, and select components; visualize heat sources.
-6. **Natural-language execution** — describe the task and the tools execute it.
+Without a structured, evidence-led workflow, engineers either over-engineer to be safe or ship with an un-reviewed assumption.
+
+---
+
+## Solution Overview
+
+The workflow turns a CAD assembly and a GA drawing into a reviewable engineering package:
+
+1. **Direct CAD understanding** — import the STEP assembly; extract the product structure, instances, dimensions and placements.
+2. **Drawing intelligence** — extract the GA bill of materials, notes and title block.
+3. **CAD-to-GA reconciliation** — match expected components to identified geometry with explicit status and exceptions.
+4. **Engineering calculations** — deterministic, unit-validated power-loss and current calculations with source traceability.
+5. **Interactive 3D inspection** — a consolidated, colour-coded assembly with component selection, isolation, and heat-source/thermal views.
+6. **Natural-language execution** — describe the task; the agent invokes the real CAD, document, calculation, visualization and reporting tools.
 7. **Professional deliverables** — an engineering assessment report plus structured, reproducible outputs.
 
-## 4. Live Demo
+---
 
-A standalone live demonstration is available at **`demo.html`** (open in any modern browser):
+## Live Demo
 
-- A representative (sanitized) 3D electrical enclosure with generic components.
-- Interactive inspection — rotate, zoom, and click any component to view its matched engineering information.
-- Component inventory, CAD-to-GA reconciliation, and power-loss calculation panels.
+[![Open live demo](assets/social-preview.png)](https://studio-public-demos.github.io/agentic-cad-engineering-analysis/demo.html)
 
-The live demo uses sample data only and exposes no implementation details, customer data, or internal APIs.
+The live demo opens the interactive **3D assembly viewer** — the primary working product:
 
-## 5. Demo Video
-
-A short walkthrough is available via the [live demo](demo.html): CAD import → drawing interpretation → component identification → calculations → 3D inspection → deliverables.
-
-## 6. Project Screenshots
-
-| View | Description |
+| Working product | URL |
 |---|---|
-| ![Assembly view](assets/screenshots/assembly-view.png) | Consolidated 3D assembly with component color coding and selection |
-| ![Reconciliation](assets/screenshots/reconciliation.png) | CAD-to-GA reconciliation with match status |
-| ![Calculations](assets/screenshots/calculations.png) | Declared power-loss calculation with source traceability |
-| ![Thermal assessment](assets/screenshots/thermal-assessment.png) | Thermal-design readiness with preliminary estimate |
-| ![Deliverables](assets/screenshots/deliverables.png) | Engineering report and structured outputs |
+| **Interactive 3D assembly** (primary) | https://studio-public-demos.github.io/agentic-cad-engineering-analysis/demo.html |
+| Showcase site | https://studio-public-demos.github.io/agentic-cad-engineering-analysis/ |
 
-## 7. Generated Outputs
+Fully client-side; no backend, no sign-up, no data leaves the browser. Uses a representative (sanitized) example.
 
-The application produces:
+---
 
-- **Engineering assessment report (PDF)** — inputs, methodology, calculations, observations, limitations.
-- **CAD component inventory** — extracted assembly structure and classifications.
-- **CAD-to-GA reconciliation report** — expected vs. identified quantities with confidence.
-- **Power-loss register** — component-wise losses with data provenance.
-- **Thermal assessment** — declared heat-load subtotal and a clearly-labelled preliminary temperature-rise estimate.
-- **Interactive 3D visualization** — model with linked engineering information.
+## Demo Video
 
-Representative (sanitized) examples are in [`assets/outputs/`](assets/outputs/).
+A walkthrough of the workflow — CAD import → drawing interpretation → component identification → calculations → 3D inspection → deliverables — is available as a short screen recording (see `assets/videos/`).
 
-## 8. Key Features
+---
 
-- Direct interpretation of STEP (AP203) assemblies — hierarchy, instances, dimensions, placements.
-- Document intelligence for GA drawings (BOM tables, notes, title block).
-- Automatic CAD ↔ drawing reconciliation with explicit exception reporting.
-- Deterministic engineering calculations with unit validation and source traceability.
-- Interactive WebGL 3D viewer — orbit/zoom/pan, component selection, isolation, heat-source and thermal views.
-- Natural-language task execution against real tools (not canned answers).
-- Professional, reproducible deliverables; all results traceable to the source files.
+## Project Screenshots
 
-## 9. Intended Users
+![Interactive 3D assembly](assets/screenshots/assembly-view.png)
 
-- **Design engineers** — inspect CAD, verify BOMs, review losses.
-- **Thermal / application engineers** — assess heat load and thermal-design readiness.
-- **Engineering managers** — review traceable, reproducible engineering deliverables.
+![CAD-to-GA reconciliation](assets/screenshots/reconciliation.png)
 
-## 10. Example Use Cases
+![Power-loss calculation](assets/screenshots/calculations.png)
 
-- Enclosure and switchgear thermal load assessment.
+*(High-resolution captures of the live demo.)*
+
+---
+
+## Generated Outputs
+
+The application produces these deliverables, reproduced here with a representative (sanitized) example:
+
+| Output | Description |
+|---|---|
+| **Engineering assessment report** | Product details, inputs, methodology, calculations, observations and limitations (PDF). |
+| **CAD component inventory** | Extracted assembly hierarchy and component classifications. |
+| **CAD-to-GA reconciliation** | Expected vs. identified quantities with match confidence and exceptions. |
+| **Power-loss register** | Component-wise losses with quantities and data provenance. |
+| **Thermal assessment** | Declared heat-load subtotal and a clearly-labelled preliminary temperature-rise estimate. |
+| **Interactive 3D visualization** | Consolidated assembly with linked engineering information. |
+
+All values are representative screening results from a sample scenario; they are not a certified compliance statement.
+
+---
+
+## Key Features
+
+| Capability | Description |
+|---|---|
+| STEP assembly interpretation | Reads AP203 product structure, instance counts, dimensions and placements directly. |
+| Drawing intelligence | Extracts GA BOM tables, notes and title block from the drawing PDF. |
+| CAD-to-GA reconciliation | Matches drawing lines to geometry as confirmed / inferred / review, with explicit exceptions. |
+| Deterministic calculations | Unit-validated power-loss and current calculations with source traceability and scenario safeguards. |
+| Interactive 3D inspection | WebGL viewer — orbit/zoom/pan, per-component selection, isolation, heat-source and thermal views. |
+| Natural-language execution | Plain-language instructions invoke real tools (not canned answers). |
+| Professional deliverables | Assessment PDF plus structured, reproducible JSON outputs. |
+
+---
+
+## Intended Users
+
+| Audience | Relevant Application |
+|---|---|
+| Design engineers | Inspect CAD, verify BOMs, review component losses. |
+| Thermal / application engineers | Assess enclosure heat load and thermal-design readiness. |
+| Engineering managers | Review traceable, reproducible engineering deliverables. |
+| Technical reviewers | Check which inputs are declared versus assumed before sign-off. |
+
+---
+
+## Example Use Cases
+
+- Enclosure and switchgear thermal load assessment from existing CAD and drawings.
 - CAD-to-BOM reconciliation and design review.
-- Solar combiner / array junction box verification.
-- Automated generation of engineering assessment reports from existing CAD and drawings.
+- Solar array junction box (AJB) verification.
+- Automated generation of engineering assessment reports from existing models and drawings.
+- A natural-language assistant for routine engineering lookups ("show all fuse holders", "reconcile the BOM", "generate the report").
 
-## 11. Technical Highlights (High-Level Only)
+---
 
-- STEP assembly parsing (product structure and instance counts).
-- Boundary-representation geometry processing for visualization.
-- Document table extraction from engineering drawings.
-- Deterministic calculation engine with scenario safeguards.
-- WebGL 3D viewer with per-component selection and view modes.
-- Natural-language task router invoking real engineering tools.
+## Technical Highlights (High-Level Only)
 
-## 12. Architecture Overview (Conceptual Only)
-
-![Architecture](assets/diagrams/architecture.png)
-
-The application follows a conceptual pipeline:
-
-```
-CAD model (STEP)  ──►  Geometry & assembly extraction  ──┐
-                                                         ├─►  Engineering model  ──►  Calculations ──►  Deliverables
-GA drawing (PDF)  ──►  Document intelligence (BOM)  ────┘            │
-                                                                     ├─►  3D visualization
-                                                                     └─►  Natural-language agent
-```
-
-Component interaction is described conceptually; internal services, prompts, and runtime architecture are not disclosed.
-
-## 13. Technical Scope & Limitations
-
-- The demonstration reproduces *declared* component losses and reconciles the drawing against the CAD model.
-- A *validated* temperature-rise result (e.g., IEC TR 60890 verification) requires additional inputs — ambient/installation conditions, manufacturer loss-vs-current characteristics, ventilation data, and temperature-rise test data. Where such data is absent, the application reports the gap and provides a clearly-labelled preliminary estimate from public-source assumptions rather than a fabricated result.
-- Visualized heat maps represent *declared heat sources*, not a computed thermal field, unless a validated thermal simulation is performed.
-
-## 14. Performance Summary (Verified Only)
-
-| Metric | Value |
+| Capability | Technology / Method |
 |---|---|
-| CAD assembly import & interpretation | ✅ successful |
+| CAD geometry | STEP (AP203) product-structure parsing and boundary-representation geometry processing. |
+| Document intelligence | Engineering-drawing table extraction from PDF. |
+| Calculation engine | Deterministic power-loss / current calculations with unit validation. |
+| 3D visualization | Three.js / WebGL, client-side, responsive, interactive. |
+| Agent execution | Natural-language task routing to real engineering tools. |
+| Deployment model | Fully static; all computation runs in the browser. |
+
+*(Implementation, prompts, workflows and internal logic are intentionally not included.)*
+
+---
+
+## Architecture Overview (Conceptual Only)
+
+```
+Inputs                          Processing                          Outputs
+─────────────                   ──────────────────────              ──────────────────────
+CAD model (STEP)   ──►  Geometry & assembly extraction  ──►  Component inventory
+GA drawing (PDF)   ──►  Document intelligence (BOM)     ──►  CAD-to-GA reconciliation
+                                                            Power-loss / current calc
+                                                            Thermal readiness
+                                                            Interactive 3D assembly
+                                                            Engineering report (PDF)
+```
+
+This is a conceptual user journey only — it is not an implementation or service-topology disclosure.
+
+---
+
+## Technical Scope & Limitations
+
+- The demonstration reproduces *declared* component losses and reconciles the drawing against the CAD model; it does not invent missing losses.
+- A *validated* temperature-rise result (e.g., IEC TR 60890 verification) requires additional inputs — ambient/installation conditions, manufacturer loss-vs-current characteristics, ventilation data, and temperature-rise test data. Where absent, the application reports the gap and provides a clearly-labelled preliminary estimate from public-source assumptions rather than a fabricated result.
+- Visualized heat maps represent *declared heat sources*, not a computed thermal field, unless a validated thermal simulation is performed.
+- The public sample model and BOM are illustrative and must not be used for real design decisions.
+
+---
+
+## Performance Summary (Verified Only)
+
+The following were reproduced and verified on the sample scenario (12 fuse-protected strings at 12 A, 40.6 W total declared loss, FRP enclosure):
+
+| Quantity | Value |
+|---|---|
+| STEP assembly import & interpretation | ✅ successful |
 | Unique products / assembly groups extracted | ✅ reproduced independently |
-| Declared heat-loss subtotal reproduced | ✅ exact |
-| Operating-current reference reproduced | ✅ exact |
+| Declared heat-loss subtotal | 40.6 W |
+| Operating-current reference | 144 A (12 × 12 A) |
 | CAD-to-GA reconciliation | ✅ complete with documented exceptions |
-| Interactive 3D visualization | ✅ verified in-browser |
+| Interactive 3D visualization | ✅ verified in-browser (no console errors) |
 | Natural-language task execution | ✅ real tools invoked |
 | Automated validation suite | ✅ all tests passing |
 | Responsive (320 / 375 / 768 / 1280 px) | ✅ no horizontal overflow |
 
-## 15. Attribution
-
-Third-party components used by the application are credited in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
-
-## 16. Built with NebulaCloud Studio
-
-Built with [NebulaCloud Studio](https://nebulacloud.studio) — AI-powered engineering automation.
-
-## 17. Related Project Showcases
-
-- [Nebula Thermal Studio](https://studio-public-demos.github.io/showcase/nebula-thermal-studio/)
-- [Thermal Verification Workbench](https://studio-public-demos.github.io/thermal-verification-workbench/)
-- [Solar Combiner Thermal Verification](https://github.com/studio-public-demos/solar-combiner-thermal-verification)
-
-## 18. Call to Action
-
-Want a similar CAD-to-engineering workflow for your own products and drawings?
-
-- Explore the [live demo](https://studio-public-demos.github.io/).
-- Learn more at [nebulacloud.studio](https://nebulacloud.studio).
+These are arithmetic results of the workflow, not physical test measurements.
 
 ---
 
-*The repository license applies only to the showcase materials in this repository. It does not grant rights to the application source code, Studio platform, proprietary workflows, prompts, models, datasets, or hosted services.*
+## Attribution
+
+- **Three.js** — WebGL library (MIT), used for the 3D visualization.
+- **FreeCAD** — open-source CAD geometry processing (LGPL-2.1-or-later).
+- **IEC TR 60890 / IEC 61439-1** — referenced thermal-verification standards, © International Electrotechnical Commission; not reproduced in this repository.
+- **Trinity Touch** — publicly documented solar combiner / junction-box products used as an illustrative reference.
+
+Full details and licences are in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
+
+---
+
+## Built with NebulaCloud Studio
+
+This project was created using [NebulaCloud Studio](https://nebulacloud.studio), an agentic application-building platform for engineering, scientific, geospatial and interactive digital workflows. NebulaCloud Studio helps domain professionals turn ideas, models, datasets and algorithms into usable, deployable applications.
+
+---
+
+## Related Project Showcases
+
+- **Thermal Verification Workbench** — a vendor-neutral enclosure temperature-rise workbench (IEC TR 60890 / IEC 61439-1).
+- **Solar Combiner Thermal Engineering** — an evidence-led thermal case study of a published DC combiner box.
+
+Additional engineering, geospatial and interactive showcases are listed on the [Studio demos catalogue](https://studio-public-demos.github.io/).
+
+---
+
+## Call to Action
+
+Working with electrical enclosures, switchgear, or other assemblies that need defensible CAD interpretation and thermal verification?
+
+- Explore the live demo in this repository.
+- See the broader portfolio at [studio-public-demos.github.io](https://studio-public-demos.github.io/).
+- Discuss a private engineering engagement at [nebulacloud.studio](https://nebulacloud.studio).
+
+---
+
+## License
+
+This repository's license applies only to the showcase materials included here. It does **not** grant rights to the source code, the Studio platform, proprietary workflows, internal prompts, models, datasets, hosted services or trademarks. See [LICENSE](LICENSE).
