@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic CAD-to-Engineering Analysis — Live Demo</title>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+</script>
+<style>
+:root{--bg:#0f1626;--panel:#182740;--border:#223452;--text:#e6ecf5;--muted:#8ba0bd;--accent:#3b82f6;--ok:#22c55e;--warn:#f59e0b}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text)}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.brand h1{margin:0;font-size:18px}.brand p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.stats{display:flex;gap:22px;flex-wrap:wrap}.stat{text-align:center}.stat b{display:block;font-size:19px;color:#60a5fa}.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase}
+.layout{display:grid;grid-template-columns:1fr 400px;height:calc(100vh - 70px)}
+#viewer{position:relative;background:radial-gradient(circle at 50% 30%,#16233c,#0a1220)}
+#hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px;pointer-events:none}
+.panel{border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:13px 6px;text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--text);border-bottom-color:var(--accent)}
+.body{flex:1;overflow:auto;padding:14px}
+.panel-section{display:none}.panel-section.on{display:block}
+.item{display:flex;justify-content:space-between;padding:9px 8px;border-bottom:1px solid var(--border);font-size:12.5px}
+.tag{font-size:10px;padding:2px 7px;border-radius:12px;background:#1a0f0f;color:#fca5a5;border:1px solid #7f1d1d}
+.muted{color:var(--muted);font-size:12px}
+.recon{padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:#0f1a2e}
+.recon.matched{border-left:3px solid var(--ok)}.recon.review{border-left:3px solid var(--warn)}
+.recon b{font-size:12.5px}.recon p{margin:5px 0 0;font-size:11.5px;color:var(--muted)}
+.big{font-size:32px;font-weight:800;color:#60a5fa}.lbl{color:var(--muted);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:6px 5px;border-bottom:1px solid var(--border);text-align:left}
+tr.total td{font-weight:700;color:#60a5fa;border-top:2px solid var(--accent)}
+.details{position:absolute;top:64px;right:14px;width:290px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:none}
+.details.on{display:block}.kv{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px}.kv span:first-child{color:var(--muted)}
+@media(max-width:820px){.layout{grid-template-columns:1fr;grid-template-rows:48vh 1fr}#viewer{min-height:48vh}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <h1>Agentic CAD-to-Engineering Analysis</h1>
+    <p>Generic electrical enclosure · representative demonstration (sanitized)</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>40.6</b><span>W subtotal</span></div>
+    <div class="stat"><b>144</b><span>A combined</span></div>
+    <div class="stat"><b>26</b><span>products</span></div>
+    <div class="stat"><b>64</b><span>instances</span></div>
+  </div>
+</div>
+<div class="layout">
+  <div id="viewer"><div id="hint">Drag to rotate · scroll to zoom · click a component to inspect</div><div id="details"></div></div>
+  <div class="panel">
+    <div class="tabs">
+      <div class="tab on" data-t="components">Components</div>
+      <div class="tab" data-t="reconcile">Reconciliation</div>
+      <div class="tab" data-t="calc">Calculations</div>
+    </div>
+    <div class="body">
+      <div class="panel-section on" id="components"></div>
+      <div class="panel-section" id="reconcile"></div>
+      <div class="panel-section" id="calc"></div>
+    </div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1729);
+const container = document.getElementById('viewer');
+const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 1, 5000);
+camera.position.set(600, 450, 700);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+container.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0,0,0); controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x334,1.2));
+const key = new THREE.DirectionalLight(0xffffff,1.4); key.position.set(500,800,600); scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff,0.6); fill.position.set(-500,300,-400); scene.add(fill);
+
+function box(w,h,d,x,y,z,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.5,metalness:.1}));m.position.set(x,y,z);scene.add(m);return m;}
+function part(name,w,h,d,x,y,z,color,data){const m=box(w,h,d,x,y,z,color);m.name=name;m.userData=data;return m;}
+
+const parts=[];
+// enclosure body (generic)
+const body=box(360,420,200, 0,0,0, 0x7fa8d8);
+// mounting plate (generic)
+box(320,380,8, 0,0,60, 0xcbb492);
+// fuse holders (generic 2x6 grid)
+for(let i=0;i<12;i++){const r=Math.floor(i/6),c=i%6;parts.push(part('Fuse holder',18,34,20, -130+c*52, -150+r*60, 64, 0xf59e0b,{desc:'Fuse holder',loss:'1.8 W',current:'12 A'}));}
+// switch
+parts.push(part('Disconnect switch',70,110,50, 120,60,60, 0xef4444,{desc:'Disconnect switch',loss:'12.5 W',current:'144 A'}));
+// busbars
+parts.push(part('Output busbar',90,14,8, 60,-40,80, 0xcd7f32,{desc:'Output busbar',loss:'1.5 W'}));
+parts.push(part('Output busbar',90,14,8, 60,80,80, 0xcd7f32,{desc:'Output busbar',loss:'1.5 W'}));
+// SPD
+parts.push(part('SPD',40,70,30, -160,160,70, 0x8b5cf6,{desc:'Surge protective device'}));
+// cover (generic)
+const cover=box(360,420,10, 0,0,-105, 0xa5c6f2); cover.name='Enclosure cover'; cover.userData={desc:'Enclosure cover'};
+
+function fit(){const b=new THREE.Box3().setFromObject(scene);const c=b.getCenter(new THREE.Vector3());const s=b.getSize(new THREE.Vector3());const d=Math.max(s.x,s.y,s.z)*1.3;camera.position.copy(c).add(new THREE.Vector3(d*.7,d*.5,d*.8));controls.target.copy(c);}
+fit();
+
+// components list
+const list=[{name:'Fuse holder',cat:'fuse_holder',n:12,heat:true},{name:'Disconnect switch',cat:'switch',n:1,heat:true},{name:'Output busbar',cat:'output_busbar',n:2,heat:true},{name:'Input busbar',cat:'input_busbar',n:2,heat:true},{name:'SPD',cat:'spd',n:1},{name:'Earthing terminal',cat:'earthing_terminal',n:1},{name:'FRP enclosure',cat:'enclosure',n:1},{name:'Mounting plate',cat:'mounting_plate',n:1}];
+document.getElementById('components').innerHTML = list.map(l=>`<div class="item"><span>${l.name}${l.heat?' <span class="tag">heat</span>':''}</span><span class="muted">×${l.n}</span></div>`).join('');
+
+document.getElementById('reconcile').innerHTML = [
+ ['Fuse holder','12','matched'],['Disconnect switch','1','matched'],['Output busbar','2','matched'],['Input busbar','2','matched'],['SPD','1','matched'],['Earthing terminal','1','matched'],['Enclosure','1','matched'],['Extra fuse instance','—','review']
+].map(r=>`<div class="recon ${r[2]}"><b>${r[0]}</b><p>Drawing qty ${r[1]} · ${r[2]}</p></div>`).join('');
+
+document.getElementById('calc').innerHTML = `<div class="big">40.6 <span class="lbl">W subtotal</span></div>
+<table><tr><th>Component</th><th>Qty</th><th>Loss</th></tr>
+<tr><td>Fuse holders</td><td>12</td><td>21.6 W</td></tr>
+<tr><td>Switch</td><td>1</td><td>12.5 W</td></tr>
+<tr><td>Busbars</td><td>4</td><td>6.5 W</td></tr>
+<tr class="total"><td colspan="2">Total</td><td>40.6 W</td></tr></table>
+<p class="muted">Preliminary temperature rise ~4 K (assumption-based estimate).</p>`;
+
+// selection
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
+container.addEventListener('click',e=>{const r=container.getBoundingClientRect();ptr.x=((e.clientX-r.left)/r.width)*2-1;ptr.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(ptr,camera);const h=ray.intersectObjects(scene.children,false).find(x=>x.object.userData.desc);const d=document.getElementById('details');if(h){const u=h.object.userData;d.className='details on';d.innerHTML=`<div class="kv"><span>Component</span><b>${u.desc}</b></div>${u.loss?`<div class="kv"><span>Declared loss</span><b>${u.loss}</b></div>`:''}${u.current?`<div class="kv"><span>Current</span><b>${u.current}</b></div>`:''}<div class="kv"><span>Source</span><b>CAD + GA</b></div>`;}else{d.className='details';}});
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.panel-section').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.getElementById(t.dataset.t).classList.add('on');});
+
+function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);}
+loop();
+window.addEventListener('resize',()=>{camera.aspect=container.clientWidth/container.clientHeight;camera.updateProjectionMatrix();renderer.setSize(container.clientWidth,container.clientHeight);});
+</script>
+</body>
+</html>

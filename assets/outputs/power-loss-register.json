@@ -1,0 +1,14 @@
+{
+  "title": "Representative power-loss register (sanitized example)",
+  "note": "Sample values only — does not correspond to any customer product.",
+  "reference_subtotal_w": 40.6,
+  "items": [
+    { "component": "Fuse holders (12 x 1.8 W)", "quantity": 12, "loss_per_unit_w": 1.8, "subtotal_w": 21.6 },
+    { "component": "Main disconnect switch (1 x 12.5 W)", "quantity": 1, "loss_per_unit_w": 12.5, "subtotal_w": 12.5 },
+    { "component": "Output busbars (2 x 1.5 W)", "quantity": 2, "loss_per_unit_w": 1.5, "subtotal_w": 3.0 },
+    { "component": "Input busbar (+Ve)", "quantity": 1, "loss_per_unit_w": 1.75, "subtotal_w": 1.75 },
+    { "component": "Input busbar (-Ve)", "quantity": 1, "loss_per_unit_w": 1.75, "subtotal_w": 1.75 }
+  ],
+  "operating_current": { "per_string_a": 12, "strings": 12, "combined_a": 144 },
+  "provenance": "General-arrangement drawing, general table"
+}
