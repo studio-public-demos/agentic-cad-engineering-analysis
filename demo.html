@@ -90,11 +90,13 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d4e0, 0.6));
 const key = new THREE.DirectionalLight(0xffffff, 1.0); key.position.set(500,800,600); scene.add(key);
 const fill = new THREE.DirectionalLight(0xffffff, 0.55); fill.position.set(-500,300,-400); scene.add(fill);
 
-function box(w,h,d,x,y,z,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color,flatShading:true}));m.position.set(x,y,z);scene.add(m);return m;}
+function box(w,h,d,x,y,z,color,opacity){const mat = opacity!=null ? new THREE.MeshLambertMaterial({color,flatShading:true,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide}) : new THREE.MeshLambertMaterial({color,flatShading:true});const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);scene.add(m);return m;}
 function part(name,w,h,d,x,y,z,color,data){const m=box(w,h,d,x,y,z,color);m.name=name;m.userData=data;return m;}
 
-// enclosure body
-box(360,420,200, 0,0,0, 0xa5c6f2);
+// enclosure body (translucent shell so internals are visible)
+box(360,420,200, 0,0,0, 0xa5c6f2, 0.22);
+// cover (translucent, front)
+box(360,420,10, 0,0,-105, 0x9cc3f0, 0.30);
 // mounting plate
 box(320,380,8, 0,0,60, 0xd5bfa0);
 // fuse holders (2x6 grid)
@@ -106,8 +108,6 @@ part('Output busbar',90,14,8, 60,-40,80, 0xcd7f32,{desc:'Output busbar',loss:'1.
 part('Output busbar',90,14,8, 60,80,80, 0xcd7f32,{desc:'Output busbar',loss:'1.5 W'});
 // SPD
 part('SPD',40,70,30, -160,160,70, 0x9b6cf5,{desc:'Surge protective device'});
-// cover (front)
-box(360,420,10, 0,0,-105, 0x9cc3f0);
 
 function fit(){const b=new THREE.Box3().setFromObject(scene);const c=b.getCenter(new THREE.Vector3());const s=b.getSize(new THREE.Vector3());const d=Math.max(s.x,s.y,s.z)*1.35;camera.position.copy(c).add(new THREE.Vector3(d*.7,d*.5,d*.85));controls.target.copy(c);}
 fit();
