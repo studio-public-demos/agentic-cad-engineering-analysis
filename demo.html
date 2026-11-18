@@ -18,6 +18,7 @@
 #viewer{position:relative;background:radial-gradient(circle at 50% 30%,#ffffff,#e8edf4);min-width:0}
 #hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px;pointer-events:none;background:rgba(255,255,255,.8);padding:4px 10px;border-radius:6px;border:1px solid var(--border)}
 #loaderr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#b91c1c;font-size:14px;text-align:center;display:none}
+#loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--muted);font-size:13px}
 .panel{border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
 .tabs{display:flex;border-bottom:1px solid var(--border);background:#fbfcfe}
 .tab{flex:1;padding:13px 6px;text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;min-height:44px}
@@ -47,12 +48,13 @@ tr.total td{font-weight:700;color:var(--accent);border-top:2px solid var(--accen
   <div class="stats">
     <div class="stat"><b>40.6</b><span>W subtotal</span></div>
     <div class="stat"><b>144</b><span>A combined</span></div>
-    <div class="stat"><b>26</b><span>products</span></div>
-    <div class="stat"><b>64</b><span>instances</span></div>
+    <div class="stat"><b>20</b><span>parts</span></div>
+    <div class="stat"><b>CAD</b><span>geometry</span></div>
   </div>
 </div>
 <div class="layout">
   <div id="viewer">
+    <div id="loading">Loading model…</div>
     <div id="hint">Drag to rotate · scroll to zoom · click a component to inspect</div>
     <div id="loaderr">3D viewer failed to load (network/CDN). Please retry.</div>
     <div id="details"></div>
@@ -73,44 +75,67 @@ tr.total td{font-weight:700;color:var(--accent);border-top:2px solid var(--accen
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe8edf4);
 const container = document.getElementById('viewer');
 const camera = new THREE.PerspectiveCamera(50, container.clientWidth/container.clientHeight, 1, 5000);
+camera.position.set(700, 550, 750);
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 container.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,0,0); controls.enableDamping = true;
+controls.target.set(300, 250, 0); controls.enableDamping = true;
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d4e0, 0.6));
 const key = new THREE.DirectionalLight(0xffffff, 1.0); key.position.set(500,800,600); scene.add(key);
 const fill = new THREE.DirectionalLight(0xffffff, 0.55); fill.position.set(-500,300,-400); scene.add(fill);
 
-function box(w,h,d,x,y,z,color,opacity){const mat = opacity!=null ? new THREE.MeshLambertMaterial({color,flatShading:true,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide}) : new THREE.MeshLambertMaterial({color,flatShading:true});const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);scene.add(m);return m;}
-function part(name,w,h,d,x,y,z,color,data){const m=box(w,h,d,x,y,z,color);m.name=name;m.userData=data;return m;}
+const COLORS = { enclosure:0xa5c6f2, cover:0x9cc3f0, plate:0xd5bfa0, rail:0x9aa5b1, fuse:0xffb020, switch:0xef5350, busbar:0xcd7f32, spd:0x9b6cf5 };
+const META = { fuse:{desc:'Fuse holder',loss:'1.8 W',current:'12 A'}, switch:{desc:'Disconnect switch',loss:'12.5 W',current:'144 A'}, busbar:{desc:'Output busbar',loss:'1.5 W'}, spd:{desc:'Surge protective device'}, plate:{desc:'Mounting plate'}, rail:{desc:'DIN rail'}, enclosure:{desc:'FRP enclosure'}, cover:{desc:'Enclosure cover'} };
 
-// enclosure body (translucent shell so internals are visible)
-box(360,420,200, 0,0,0, 0xa5c6f2, 0.22);
-// cover (translucent, front)
-box(360,420,10, 0,0,-105, 0x9cc3f0, 0.30);
-// mounting plate
-box(320,380,8, 0,0,60, 0xd5bfa0);
-// fuse holders (2x6 grid)
-for(let i=0;i<12;i++){const r=Math.floor(i/6),c=i%6;part('Fuse holder',18,34,20, -130+c*52, -150+r*60, 64, 0xffb020,{desc:'Fuse holder',loss:'1.8 W',current:'12 A'});}
-// switch
-part('Disconnect switch',70,110,50, 120,60,60, 0xef5350,{desc:'Disconnect switch',loss:'12.5 W',current:'144 A'});
-// busbars
-part('Output busbar',90,14,8, 60,-40,80, 0xcd7f32,{desc:'Output busbar',loss:'1.5 W'});
-part('Output busbar',90,14,8, 60,80,80, 0xcd7f32,{desc:'Output busbar',loss:'1.5 W'});
-// SPD
-part('SPD',40,70,30, -160,160,70, 0x9b6cf5,{desc:'Surge protective device'});
+let meshes = [];
 
-function fit(){const b=new THREE.Box3().setFromObject(scene);const c=b.getCenter(new THREE.Vector3());const s=b.getSize(new THREE.Vector3());const d=Math.max(s.x,s.y,s.z)*1.35;camera.position.copy(c).add(new THREE.Vector3(d*.7,d*.5,d*.85));controls.target.copy(c);}
-fit();
+async function loadModel(){
+  const loader = new GLTFLoader();
+  const gltf = await loader.loadAsync('assets/model/generic-enclosure.glb');
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x3b5a8a, transparent:true, opacity:0.5 });
+  gltf.scene.traverse(obj => {
+    if(!obj.isMesh) return;
+    const kind = obj.name.replace(/_\d+$/, '');
+    const mat = (kind==='enclosure') ? new THREE.MeshLambertMaterial({color:COLORS[kind],transparent:true,opacity:0.30,depthWrite:false,side:THREE.DoubleSide,flatShading:true})
+              : (kind==='cover') ? new THREE.MeshLambertMaterial({color:COLORS[kind],transparent:true,opacity:0.35,depthWrite:false,side:THREE.DoubleSide,flatShading:true})
+              : new THREE.MeshLambertMaterial({color:COLORS[kind]||0x9aa8bd,flatShading:true});
+    obj.material = mat;
+    obj.userData.kind = kind;
+    obj.userData.desc = (META[kind]||{}).desc;
+    obj.userData.loss = (META[kind]||{}).loss;
+    obj.userData.current = (META[kind]||{}).current;
+    meshes.push(obj);
+    // draw a clear outline around the enclosure and cover
+    if(kind==='enclosure' || kind==='cover'){
+      const edges = new THREE.EdgesGeometry(obj.geometry, 30);
+      const line = new THREE.LineSegments(edges, edgeMat);
+      line.applyMatrix4(obj.matrixWorld);
+      line.raycast = () => {};
+      scene.add(line);
+    }
+  });
+  scene.add(gltf.scene);
+  const b = new THREE.Box3().setFromObject(gltf.scene);
+  const c = b.getCenter(new THREE.Vector3());
+  const s = b.getSize(new THREE.Vector3());
+  const d = Math.max(s.x,s.y,s.z)*1.3;
+  camera.position.copy(c).add(new THREE.Vector3(d*.7,d*.5,d*.85));
+  controls.target.copy(c);
+  window.__dbg = { cam: camera.position.toArray().map(Math.round), target: controls.target.toArray().map(Math.round), size: s.toArray().map(Math.round) };
+  document.getElementById('loading').style.display='none';
+}
+
+loadModel().catch(e => { document.getElementById('loaderr').style.display='block'; document.getElementById('loading').style.display='none'; });
 
 const list=[{name:'Fuse holder',heat:true,n:12},{name:'Disconnect switch',heat:true,n:1},{name:'Output busbar',heat:true,n:2},{name:'Input busbar',heat:true,n:2},{name:'SPD',n:1},{name:'Earthing terminal',n:1},{name:'FRP enclosure',n:1},{name:'Mounting plate',n:1}];
 document.getElementById('components').innerHTML = list.map(l=>`<div class="item"><span>${l.name}${l.heat?' <span class="tag">heat</span>':''}</span><span class="muted">×${l.n}</span></div>`).join('');
@@ -128,7 +153,7 @@ document.getElementById('calc').innerHTML = `<div class="big">40.6 <span class="
 <p class="muted">Preliminary temperature rise ~4 K (assumption-based estimate).</p>`;
 
 const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
-container.addEventListener('click',e=>{const r=container.getBoundingClientRect();ptr.x=((e.clientX-r.left)/r.width)*2-1;ptr.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(ptr,camera);const h=ray.intersectObjects(scene.children,false).find(x=>x.object.userData.desc);const d=document.getElementById('details');if(h){const u=h.object.userData;d.className='details on';d.innerHTML=`<div class="kv"><span>Component</span><b>${u.desc}</b></div>${u.loss?`<div class="kv"><span>Declared loss</span><b>${u.loss}</b></div>`:''}${u.current?`<div class="kv"><span>Current</span><b>${u.current}</b></div>`:''}<div class="kv"><span>Source</span><b>CAD + GA</b></div>`;}else{d.className='details';}});
+container.addEventListener('click',e=>{const r=container.getBoundingClientRect();ptr.x=((e.clientX-r.left)/r.width)*2-1;ptr.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(ptr,camera);const h=ray.intersectObjects(meshes,false).find(x=>x.object.userData.desc);const d=document.getElementById('details');if(h){const u=h.object.userData;d.className='details on';d.innerHTML=`<div class="kv"><span>Component</span><b>${u.desc}</b></div>${u.loss?`<div class="kv"><span>Declared loss</span><b>${u.loss}</b></div>`:''}${u.current?`<div class="kv"><span>Current</span><b>${u.current}</b></div>`:''}<div class="kv"><span>Source</span><b>CAD + GA</b></div>`;}else{d.className='details';}});
 
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.panel-section').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.getElementById(t.dataset.t).classList.add('on');});
 
